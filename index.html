@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeOS — Your Personal Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    :root {
+      --primary: #0EA5E9;
+      --secondary: #0284C7;
+      --cta: #10B981;
+      --bg: #F0F9FF;
+      --text: #0C4A6E;
+      --sidebar: #0C1A2E;
+    }
+    body { background: var(--bg); color: var(--text); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #BAE6FD; border-radius: 99px; }
+
+    /* Sidebar */
+    .sidebar { background: var(--sidebar); }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      border-radius: 10px; cursor: pointer; color: #94A3B8;
+      transition: background 200ms, color 200ms; font-weight: 500; font-size: 14px;
+    }
+    .nav-item:hover { background: rgba(14,165,233,0.12); color: #E0F2FE; }
+    .nav-item.active { background: rgba(14,165,233,0.2); color: #38BDF8; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #E0F2FE;
+      box-shadow: 0 1px 3px rgba(14,165,233,0.06), 0 4px 16px rgba(14,165,233,0.04);
+    }
+    .card-elevated {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #E0F2FE;
+      box-shadow: 0 4px 6px rgba(14,165,233,0.08), 0 12px 32px rgba(14,165,233,0.08);
+    }
+
+    /* Stat ring */
+    .ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-bg { fill: none; stroke: #E0F2FE; }
+    .ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 600ms cubic-bezier(.4,0,.2,1); }
+    .ring-label { position: absolute; text-align: center; }
+
+    /* Priority badges */
+    .badge-high { background: #FEE2E2; color: #DC2626; }
+    .badge-med  { background: #FEF9C3; color: #CA8A04; }
+    .badge-low  { background: #DCFCE7; color: #16A34A; }
+
+    /* Habit grid */
+    .habit-dot {
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 2px solid #E0F2FE;
+      cursor: pointer; transition: background 150ms, border-color 150ms, transform 100ms;
+      background: #F0F9FF;
+    }
+    .habit-dot.done { background: var(--cta); border-color: var(--cta); }
+    .habit-dot:hover { transform: scale(1.1); }
+
+    /* Input / textarea */
+    .field {
+      width: 100%; border: 1.5px solid #BAE6FD; border-radius: 10px;
+      padding: 8px 12px; font-size: 14px; outline: none; background: white;
+      color: var(--text); transition: border-color 150ms;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .field:focus { border-color: var(--primary); }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--primary); color: white; border: none;
+      border-radius: 10px; padding: 9px 18px; font-weight: 600; font-size: 14px;
+      cursor: pointer; transition: background 150ms, transform 100ms, box-shadow 150ms;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      box-shadow: 0 2px 8px rgba(14,165,233,0.3);
+    }
+    .btn-primary:hover { background: var(--secondary); box-shadow: 0 4px 16px rgba(14,165,233,0.35); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: transparent; border: 1.5px solid #BAE6FD; border-radius: 10px;
+      padding: 8px 16px; font-weight: 500; font-size: 14px; cursor: pointer;
+      color: var(--text); transition: background 150ms, border-color 150ms;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .btn-ghost:hover { background: #E0F2FE; border-color: var(--primary); }
+
+    .btn-cta {
+      background: var(--cta); color: white; border: none;
+      border-radius: 10px; padding: 9px 18px; font-weight: 600; font-size: 14px;
+      cursor: pointer; transition: background 150ms, transform 100ms;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+    }
+    .btn-cta:hover { background: #059669; }
+    .btn-cta:active { transform: scale(0.97); }
+
+    /* Run entry rows */
+    .run-row { transition: background 150ms; }
+    .run-row:hover { background: #F0F9FF; }
+
+    /* Task checkboxes */
+    .task-check {
+      width: 18px; height: 18px; border-radius: 6px; border: 2px solid #BAE6FD;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 150ms, border-color 150ms; flex-shrink: 0;
+    }
+    .task-check.checked { background: var(--cta); border-color: var(--cta); }
+
+    /* View transition */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Pomodoro ring */
+    #pomodoro-ring { transition: stroke-dashoffset 1s linear; }
+
+    /* Journal entries */
+    .journal-entry { transition: box-shadow 150ms; }
+    .journal-entry:hover { box-shadow: 0 4px 20px rgba(14,165,233,0.1); }
+
+    /* Progress bar */
+    .prog-bar { height: 6px; border-radius: 99px; background: #E0F2FE; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 99px; background: var(--primary); transition: width 600ms cubic-bezier(.4,0,.2,1); }
+    .prog-fill.green { background: var(--cta); }
+    .prog-fill.amber { background: #F59E0B; }
+
+    /* Mobile overlay sidebar */
+    @media (max-width: 768px) {
+      #sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 50; transition: left 200ms; }
+      #sidebar.open { left: 0; }
+      #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
+      #overlay.show { display: block; }
+    }
+
+    /* Streak flame */
+    .streak-flame { color: #F97316; }
+
+    /* Countdown */
+    .countdown-block {
+      background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+      border-radius: 14px; color: white; text-align: center; padding: 16px 12px;
+    }
+
+    /* Grain texture */
+    .grain::after {
+      content: ''; position: absolute; inset: 0; border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* Color swatches */
+    .color-swatch {
+      width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      transition: transform 150ms cubic-bezier(.4,0,.2,1), box-shadow 150ms;
+      outline: none; flex-shrink: 0;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.selected {
+      transform: scale(1.18);
+      box-shadow: 0 0 0 3px white, 0 0 0 5px var(--sw-color, #0EA5E9);
+    }
+    .check-icon {
+      width: 14px; height: 14px; opacity: 0;
+      transition: opacity 150ms; pointer-events: none;
+    }
+    .color-swatch.selected .check-icon { opacity: 1; }
+
+    /* Focus visible */
+    *:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+<!-- Mobile overlay -->
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside id="sidebar" class="sidebar w-64 flex-shrink-0 flex flex-col h-full overflow-y-auto">
+  <!-- Logo -->
+  <div class="p-6 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg,#0EA5E9,#10B981)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="text-white font-bold text-lg leading-none">LifeOS</div>
+        <div class="text-xs mt-0.5" style="color:#475569">Personal Command Center</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="px-3 flex-1">
+    <div class="text-xs font-600 uppercase tracking-widest mb-2 px-3" style="color:#334155;font-size:10px;letter-spacing:0.1em">Overview</div>
+    <div class="nav-item active" onclick="showView('dashboard', this)" data-view="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+
+    <div class="text-xs font-600 uppercase tracking-widest mb-2 mt-5 px-3" style="color:#334155;font-size:10px;letter-spacing:0.1em">Trackers</div>
+    <div class="nav-item" onclick="showView('work', this)" data-view="work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      Work & Tasks
+    </div>
+    <div class="nav-item" onclick="showView('study', this)" data-view="study">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Study
+    </div>
+    <div class="nav-item" onclick="showView('marathon', this)" data-view="marathon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Marathon Training
+    </div>
+    <div class="nav-item" onclick="showView('habits', this)" data-view="habits">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Habits
+    </div>
+    <div class="nav-item" onclick="showView('journal', this)" data-view="journal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Journal
+    </div>
+  </nav>
+
+  <!-- Profile footer -->
+  <div class="p-4 border-t" style="border-color:#1E293B">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,#0EA5E9,#10B981)">M</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-white text-sm font-600 truncate">Marco</div>
+        <div class="text-xs truncate" style="color:#475569">Full-time · Student · Runner</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN CONTENT ── -->
+<main class="flex-1 overflow-y-auto" style="background:var(--bg)">
+
+  <!-- Mobile header -->
+  <div class="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-sky-100 sticky top-0 z-30">
+    <button onclick="openSidebar()" class="p-2 rounded-lg hover:bg-sky-50 cursor-pointer" style="border:none;background:transparent">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0C4A6E" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="font-bold text-base" style="color:var(--text)">LifeOS</span>
+    <div class="w-8"></div>
+  </div>
+
+  <div class="p-4 md:p-8 max-w-7xl mx-auto">
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <div id="view-dashboard" class="view active">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="text-2xl md:text-3xl font-800 leading-tight" style="color:var(--text);letter-spacing:-0.03em" id="greeting">Good morning, Marco 👋</div>
+        <div class="text-sm mt-1" style="color:#0369A1" id="today-date"></div>
+      </div>
+
+      <!-- Top stat cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="card p-4 cursor-pointer" onclick="showView('work', document.querySelector('[data-view=work]'))">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#E0F2FE">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+            </div>
+            <span class="text-xs font-500 px-2 py-0.5 rounded-full" style="background:#E0F2FE;color:#0284C7" id="tasks-badge">0 done</span>
+          </div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.02em" id="stat-tasks">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Tasks today</div>
+          <div class="prog-bar mt-3"><div class="prog-fill" id="tasks-prog" style="width:0%"></div></div>
+        </div>
+
+        <div class="card p-4 cursor-pointer" onclick="showView('study', document.querySelector('[data-view=study]'))">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#F0FDF4">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <span class="text-xs font-500 px-2 py-0.5 rounded-full" style="background:#F0FDF4;color:#16A34A" id="study-badge">Goal: 4h</span>
+          </div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.02em" id="stat-study">0h</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Studied today</div>
+          <div class="prog-bar mt-3"><div class="prog-fill green" id="study-prog" style="width:0%"></div></div>
+        </div>
+
+        <div class="card p-4 cursor-pointer" onclick="showView('marathon', document.querySelector('[data-view=marathon]'))">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#FFF7ED">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <span class="text-xs font-500 px-2 py-0.5 rounded-full" style="background:#FFF7ED;color:#EA580C" id="km-badge">Goal: 10km</span>
+          </div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.02em" id="stat-km">0km</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Km this week</div>
+          <div class="prog-bar mt-3"><div class="prog-fill amber" id="km-prog" style="width:0%"></div></div>
+        </div>
+
+        <div class="card p-4 cursor-pointer" onclick="showView('habits', document.querySelector('[data-view=habits]'))">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#FDF4FF">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <span class="text-xs font-500 px-2 py-0.5 rounded-full" style="background:#FDF4FF;color:#9333EA" id="habit-badge">Today</span>
+          </div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.02em" id="stat-habits">0/0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Habits done</div>
+          <div class="prog-bar mt-3"><div class="prog-fill" id="habits-prog" style="width:0%;background:#A855F7"></div></div>
+        </div>
+      </div>
+
+      <!-- Middle row: weekly chart + today agenda -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- Weekly activity chart -->
+        <div class="card-elevated p-6 lg:col-span-2">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <div class="font-700 text-base" style="color:var(--text)">Weekly Activity</div>
+              <div class="text-xs mt-0.5" style="color:#0369A1">Study hours + km run per day</div>
+            </div>
+            <div class="flex gap-3 text-xs">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#0EA5E9"></span>Study (h)</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#F97316"></span>Run (km)</span>
+            </div>
+          </div>
+          <canvas id="weeklyChart" height="180"></canvas>
+        </div>
+
+        <!-- Today's quick agenda -->
+        <div class="card p-5">
+          <div class="font-700 text-base mb-4" style="color:var(--text)">Today's Focus</div>
+          <div id="today-tasks-list" class="space-y-2 mb-4"></div>
+          <button class="btn-ghost w-full text-center" onclick="showView('work', document.querySelector('[data-view=work]'))">View all tasks →</button>
+        </div>
+      </div>
+
+      <!-- Bottom row: marathon countdown + habit quick-check -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Marathon countdown -->
+        <div class="card-elevated p-6 relative overflow-hidden grain" style="background:linear-gradient(135deg,#0C1A2E 0%,#0F3460 100%)">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="text-white font-700 text-base">Race Countdown</div>
+              <div class="text-xs mt-0.5" style="color:#7DD3FC" id="race-name-dash">Set your race date →</div>
+            </div>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <div class="flex gap-3" id="countdown-blocks">
+            <div class="countdown-block flex-1"><div class="text-3xl font-800" id="cd-days">--</div><div class="text-xs opacity-70 mt-0.5">days</div></div>
+            <div class="countdown-block flex-1"><div class="text-3xl font-800" id="cd-hours">--</div><div class="text-xs opacity-70 mt-0.5">hours</div></div>
+            <div class="countdown-block flex-1"><div class="text-3xl font-800" id="cd-mins">--</div><div class="text-xs opacity-70 mt-0.5">mins</div></div>
+          </div>
+          <div class="mt-4">
+            <div class="text-xs mb-1" style="color:#7DD3FC">Weekly km goal</div>
+            <div class="prog-bar" style="background:rgba(255,255,255,0.1)"><div class="prog-fill" id="km-dash-prog" style="width:0%;background:#F97316"></div></div>
+            <div class="flex justify-between text-xs mt-1" style="color:#7DD3FC"><span id="km-done-dash">0 km done</span><span id="km-goal-dash">Goal: 10 km</span></div>
+          </div>
+        </div>
+
+        <!-- Habit quick check -->
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="font-700 text-base" style="color:var(--text)">Today's Habits</div>
+            <button class="btn-ghost text-xs py-1.5 px-3" onclick="showView('habits', document.querySelector('[data-view=habits]'))">Manage</button>
+          </div>
+          <div id="dash-habits" class="space-y-2.5"></div>
+          <div class="mt-4 text-center" id="habit-empty-msg" style="display:none">
+            <div class="text-sm" style="color:#0369A1">No habits yet. Add some in the Habits tab!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ WORK & TASKS ══════════ -->
+    <div id="view-work" class="view">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.03em">Work & Tasks</div>
+          <div class="text-sm mt-0.5" style="color:#0369A1">Manage your work tasks and focus time</div>
+        </div>
+        <button class="btn-primary flex items-center gap-2" onclick="openTaskModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Task
+        </button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:var(--text)" id="tasks-todo-count">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">To do</div>
+        </div>
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:#0EA5E9" id="tasks-prog-count">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">In progress</div>
+        </div>
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:#10B981" id="tasks-done-count">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Done today</div>
+        </div>
+      </div>
+
+      <!-- Kanban board -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Todo -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-2.5 h-2.5 rounded-full" style="background:#94A3B8"></div>
+            <span class="font-600 text-sm" style="color:var(--text)">To Do</span>
+            <span class="ml-auto text-xs px-2 py-0.5 rounded-full" style="background:#F1F5F9;color:#64748B" id="col-todo-cnt">0</span>
+          </div>
+          <div id="col-todo" class="space-y-3 min-h-24"></div>
+        </div>
+        <!-- In Progress -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-2.5 h-2.5 rounded-full" style="background:#0EA5E9"></div>
+            <span class="font-600 text-sm" style="color:var(--text)">In Progress</span>
+            <span class="ml-auto text-xs px-2 py-0.5 rounded-full" style="background:#E0F2FE;color:#0284C7" id="col-prog-cnt">0</span>
+          </div>
+          <div id="col-inprog" class="space-y-3 min-h-24"></div>
+        </div>
+        <!-- Done -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-2.5 h-2.5 rounded-full" style="background:#10B981"></div>
+            <span class="font-600 text-sm" style="color:var(--text)">Done</span>
+            <span class="ml-auto text-xs px-2 py-0.5 rounded-full" style="background:#F0FDF4;color:#16A34A" id="col-done-cnt">0</span>
+          </div>
+          <div id="col-done" class="space-y-3 min-h-24"></div>
+        </div>
+      </div>
+
+      <!-- Pomodoro timer -->
+      <div class="card-elevated p-6 mt-8">
+        <div class="font-700 text-base mb-5" style="color:var(--text)">Focus Timer (Pomodoro)</div>
+        <div class="flex flex-col md:flex-row items-center gap-8">
+          <div class="ring-wrap" style="width:140px;height:140px">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle class="ring-bg" cx="70" cy="70" r="60" stroke-width="10"/>
+              <circle id="pomodoro-ring" class="ring-fill" cx="70" cy="70" r="60" stroke-width="10" stroke="#0EA5E9"
+                stroke-dasharray="377" stroke-dashoffset="0"/>
+            </svg>
+            <div class="ring-label">
+              <div class="text-3xl font-800" style="color:var(--text)" id="pomo-time">25:00</div>
+              <div class="text-xs" style="color:#0369A1" id="pomo-label">Focus</div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="flex gap-3 flex-wrap mb-4">
+              <button class="btn-primary" id="pomo-start" onclick="togglePomodoro()">Start</button>
+              <button class="btn-ghost" onclick="resetPomodoro()">Reset</button>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="card p-3 cursor-pointer" onclick="setPomodoro(25,'Focus')" id="pomo-mode-25">
+                <div class="font-700 text-sm" style="color:var(--text)">25m</div>
+                <div class="text-xs" style="color:#0369A1">Focus</div>
+              </div>
+              <div class="card p-3 cursor-pointer" onclick="setPomodoro(5,'Short Break')">
+                <div class="font-700 text-sm" style="color:var(--text)">5m</div>
+                <div class="text-xs" style="color:#0369A1">Short break</div>
+              </div>
+              <div class="card p-3 cursor-pointer" onclick="setPomodoro(15,'Long Break')">
+                <div class="font-700 text-sm" style="color:var(--text)">15m</div>
+                <div class="text-xs" style="color:#0369A1">Long break</div>
+              </div>
+            </div>
+            <div class="mt-3 text-sm" style="color:#0369A1">Sessions completed today: <strong id="pomo-sessions">0</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ STUDY ══════════ -->
+    <div id="view-study" class="view">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.03em">Study Tracker</div>
+          <div class="text-sm mt-0.5" style="color:#0369A1">Log sessions · Track subjects · Hit your goals</div>
+        </div>
+        <button class="btn-cta flex items-center gap-2" onclick="openStudyModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Log Session
+        </button>
+      </div>
+
+      <!-- Study stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4">
+          <div class="text-2xl font-800" style="color:var(--text)" id="study-today-h">0h 0m</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Today</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-2xl font-800" style="color:#0EA5E9" id="study-week-h">0h</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">This week</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-2xl font-800" style="color:#10B981" id="study-streak">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Day streak 🔥</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-2xl font-800" style="color:#F59E0B" id="study-total-h">0h</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Total logged</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Subject breakdown -->
+        <div class="card p-5">
+          <div class="font-700 text-base mb-4" style="color:var(--text)">By Subject</div>
+          <div id="subject-list" class="space-y-3"></div>
+          <div id="no-subjects" class="text-sm text-center py-4" style="color:#0369A1">No sessions yet. Log one!</div>
+        </div>
+
+        <!-- Sessions log -->
+        <div class="card p-5 lg:col-span-2">
+          <div class="font-700 text-base mb-4" style="color:var(--text)">Recent Sessions</div>
+          <div id="sessions-list" class="space-y-2"></div>
+          <div id="no-sessions" class="text-sm text-center py-8" style="color:#0369A1">
+            No sessions logged yet. Hit "Log Session" to start!
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly study chart -->
+      <div class="card-elevated p-6 mt-6">
+        <div class="font-700 text-base mb-5" style="color:var(--text)">Study Hours This Week</div>
+        <canvas id="studyChart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- ══════════ MARATHON TRAINING ══════════ -->
+    <div id="view-marathon" class="view">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.03em">Marathon Training</div>
+          <div class="text-sm mt-0.5" style="color:#0369A1">Log runs · Track progress · Crush your race</div>
+        </div>
+        <button class="btn-primary flex items-center gap-2" onclick="openRunModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Log Run
+        </button>
+      </div>
+
+      <!-- Race setup card -->
+      <div class="card-elevated p-6 mb-6" style="background:linear-gradient(135deg,#0C1A2E,#0F3460)">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div class="text-white font-700 text-base mb-3">Race Setup</div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs mb-1 block" style="color:#7DD3FC">Race name</label>
+                <input id="race-name-input" class="field" placeholder="e.g. City Marathon 2025" oninput="saveRaceInfo()" />
+              </div>
+              <div>
+                <label class="text-xs mb-1 block" style="color:#7DD3FC">Race date</label>
+                <input type="date" id="race-date-input" class="field" oninput="saveRaceInfo()" />
+              </div>
+              <div>
+                <label class="text-xs mb-1 block" style="color:#7DD3FC">Weekly km goal</label>
+                <input type="number" id="weekly-km-goal" class="field" value="40" min="1" oninput="saveRaceInfo()" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="text-white font-700 text-base mb-3">Countdown</div>
+            <div class="flex gap-3">
+              <div class="countdown-block flex-1"><div class="text-3xl font-800" id="m-cd-days">--</div><div class="text-xs opacity-70 mt-0.5">days</div></div>
+              <div class="countdown-block flex-1"><div class="text-3xl font-800" id="m-cd-hours">--</div><div class="text-xs opacity-70 mt-0.5">hours</div></div>
+              <div class="countdown-block flex-1"><div class="text-3xl font-800" id="m-cd-mins">--</div><div class="text-xs opacity-70 mt-0.5">mins</div></div>
+            </div>
+            <div class="mt-4">
+              <div class="flex justify-between text-xs mb-1" style="color:#7DD3FC">
+                <span>Weekly progress</span><span id="km-pct">0%</span>
+              </div>
+              <div class="prog-bar" style="background:rgba(255,255,255,0.15)">
+                <div class="prog-fill" id="weekly-km-bar" style="width:0%;background:#F97316;transition:width 600ms"></div>
+              </div>
+              <div class="flex justify-between text-xs mt-1" style="color:#7DD3FC">
+                <span id="km-done-label">0 km done</span>
+                <span id="km-goal-label">Goal: 40 km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pace calculator -->
+      <div class="card p-5 mb-6">
+        <div class="font-700 text-base mb-4" style="color:var(--text)">Pace Calculator</div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div>
+            <label class="text-xs mb-1 block" style="color:#0369A1">Distance (km)</label>
+            <input type="number" id="pace-dist" class="field" placeholder="42.2" oninput="calcPace()" />
+          </div>
+          <div>
+            <label class="text-xs mb-1 block" style="color:#0369A1">Hours</label>
+            <input type="number" id="pace-h" class="field" placeholder="0" min="0" oninput="calcPace()" />
+          </div>
+          <div>
+            <label class="text-xs mb-1 block" style="color:#0369A1">Minutes</label>
+            <input type="number" id="pace-m" class="field" placeholder="0" min="0" max="59" oninput="calcPace()" />
+          </div>
+          <div>
+            <label class="text-xs mb-1 block" style="color:#0369A1">Seconds</label>
+            <input type="number" id="pace-s" class="field" placeholder="0" min="0" max="59" oninput="calcPace()" />
+          </div>
+        </div>
+        <div class="mt-4 p-4 rounded-xl" style="background:#F0F9FF;border:1.5px solid #BAE6FD">
+          <span class="text-sm" style="color:#0369A1">Pace: </span>
+          <span class="font-700" style="color:var(--text)" id="pace-result">-- min/km</span>
+          <span class="mx-3 text-sky-200">|</span>
+          <span class="text-sm" style="color:#0369A1">Speed: </span>
+          <span class="font-700" style="color:var(--text)" id="speed-result">-- km/h</span>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:var(--text)" id="run-total-km">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Total km</div>
+        </div>
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:#F97316" id="run-week-km">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">This week</div>
+        </div>
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:#0EA5E9" id="run-longest">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Longest run</div>
+        </div>
+        <div class="card p-4 text-center">
+          <div class="text-2xl font-800" style="color:#10B981" id="run-count">0</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">Total runs</div>
+        </div>
+      </div>
+
+      <!-- Weekly mileage chart -->
+      <div class="card-elevated p-6 mb-6">
+        <div class="font-700 text-base mb-5" style="color:var(--text)">Weekly Mileage (last 8 weeks)</div>
+        <canvas id="runChart" height="160"></canvas>
+      </div>
+
+      <!-- Run log table -->
+      <div class="card p-5">
+        <div class="font-700 text-base mb-4" style="color:var(--text)">Run Log</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr style="border-bottom:1.5px solid #E0F2FE">
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Date</th>
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Distance</th>
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Duration</th>
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Pace</th>
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Type</th>
+                <th class="text-left py-2 px-3 font-600 text-xs uppercase tracking-wide" style="color:#0369A1">Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="run-table-body"></tbody>
+          </table>
+          <div id="no-runs" class="text-sm text-center py-8" style="color:#0369A1">No runs logged yet. Lace up and log your first run!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ HABITS ══════════ -->
+    <div id="view-habits" class="view">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.03em">Habit Tracker</div>
+          <div class="text-sm mt-0.5" style="color:#0369A1">Build streaks · Track consistency</div>
+        </div>
+        <button class="btn-primary flex items-center gap-2" onclick="openHabitModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Habit
+        </button>
+      </div>
+
+      <!-- Day headers -->
+      <div class="card-elevated p-5 mb-6 overflow-x-auto">
+        <div id="habit-grid-header" class="flex gap-2 mb-3 pl-44"></div>
+        <div id="habit-grid" class="space-y-3"></div>
+        <div id="no-habits-msg" class="text-center py-8" style="color:#0369A1">
+          No habits yet. Click "Add Habit" to get started!
+        </div>
+      </div>
+
+      <!-- Streak leaderboard -->
+      <div class="card p-5">
+        <div class="font-700 text-base mb-4" style="color:var(--text)">Streaks</div>
+        <div id="streaks-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ JOURNAL ══════════ -->
+    <div id="view-journal" class="view">
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <div class="text-2xl font-800" style="color:var(--text);letter-spacing:-0.03em">Journal</div>
+          <div class="text-sm mt-0.5" style="color:#0369A1">Capture thoughts, reflections, notes</div>
+        </div>
+      </div>
+
+      <!-- New entry -->
+      <div class="card-elevated p-6 mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-sm font-600" style="color:var(--text)" id="journal-date-label"></div>
+          <div class="flex gap-2">
+            <select id="journal-mood" class="field" style="width:auto;padding:5px 10px;font-size:13px">
+              <option value="">Mood…</option>
+              <option value="great">Great</option>
+              <option value="good">Good</option>
+              <option value="okay">Okay</option>
+              <option value="tired">Tired</option>
+              <option value="stressed">Stressed</option>
+            </select>
+          </div>
+        </div>
+        <input id="journal-title" class="field mb-3" placeholder="Entry title (optional)" />
+        <textarea id="journal-body" class="field" rows="5" placeholder="What's on your mind? Reflect on your day, your training, your studies…" style="resize:vertical"></textarea>
+        <div class="flex justify-end mt-3">
+          <button class="btn-primary" onclick="saveJournalEntry()">Save Entry</button>
+        </div>
+      </div>
+
+      <!-- Entries list -->
+      <div id="journal-entries" class="space-y-4"></div>
+      <div id="no-journal" class="text-center py-8" style="color:#0369A1">No entries yet. Start writing!</div>
+    </div>
+
+  </div><!-- /max-w container -->
+</main>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- Task modal -->
+<div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+  <div class="absolute inset-0" style="background:rgba(12,26,46,0.6)" onclick="closeTaskModal()"></div>
+  <div class="card-elevated relative z-10 w-full max-w-md p-6">
+    <div class="font-700 text-lg mb-5" style="color:var(--text)">Add Task</div>
+    <div class="space-y-3">
+      <input id="task-title-input" class="field" placeholder="Task title" />
+      <textarea id="task-notes-input" class="field" rows="2" placeholder="Notes (optional)" style="resize:none"></textarea>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Priority</label>
+          <select id="task-priority" class="field">
+            <option value="high">High</option>
+            <option value="med" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Status</label>
+          <select id="task-status" class="field">
+            <option value="todo">To Do</option>
+            <option value="inprog">In Progress</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-5">
+      <button type="button" class="btn-ghost" onclick="closeTaskModal()">Cancel</button>
+      <button type="button" class="btn-primary" onclick="saveTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Study session modal -->
+<div id="study-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+  <div class="absolute inset-0" style="background:rgba(12,26,46,0.6)" onclick="closeStudyModal()"></div>
+  <div class="card-elevated relative z-10 w-full max-w-md p-6">
+    <div class="font-700 text-lg mb-5" style="color:var(--text)">Log Study Session</div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs mb-1 block" style="color:#0369A1">Subject</label>
+        <input id="study-subject" class="field" placeholder="e.g. Math, Programming, Biology" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Duration (minutes)</label>
+          <input type="number" id="study-duration" class="field" placeholder="60" min="1" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Date</label>
+          <input type="date" id="study-date" class="field" />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs mb-1 block" style="color:#0369A1">Notes</label>
+        <textarea id="study-notes" class="field" rows="2" placeholder="What did you cover?" style="resize:none"></textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-5">
+      <button type="button" class="btn-ghost" onclick="closeStudyModal()">Cancel</button>
+      <button type="button" class="btn-cta" onclick="saveStudySession()">Log Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Run modal -->
+<div id="run-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+  <div class="absolute inset-0" style="background:rgba(12,26,46,0.6)" onclick="closeRunModal()"></div>
+  <div class="card-elevated relative z-10 w-full max-w-md p-6">
+    <div class="font-700 text-lg mb-5" style="color:var(--text)">Log Run</div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Distance (km)</label>
+          <input type="number" id="run-dist" class="field" placeholder="10.5" step="0.1" min="0" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Date</label>
+          <input type="date" id="run-date" class="field" />
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Hours</label>
+          <input type="number" id="run-h" class="field" placeholder="0" min="0" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Minutes</label>
+          <input type="number" id="run-m" class="field" placeholder="55" min="0" max="59" />
+        </div>
+        <div>
+          <label class="text-xs mb-1 block" style="color:#0369A1">Seconds</label>
+          <input type="number" id="run-s" class="field" placeholder="0" min="0" max="59" />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs mb-1 block" style="color:#0369A1">Run type</label>
+        <select id="run-type" class="field">
+          <option value="Easy">Easy Run</option>
+          <option value="Tempo">Tempo Run</option>
+          <option value="Intervals">Intervals</option>
+          <option value="Long Run">Long Run</option>
+          <option value="Race">Race</option>
+          <option value="Recovery">Recovery</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs mb-1 block" style="color:#0369A1">Notes</label>
+        <input id="run-notes" class="field" placeholder="How did it feel?" />
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-5">
+      <button type="button" class="btn-ghost" onclick="closeRunModal()">Cancel</button>
+      <button type="button" class="btn-primary" onclick="saveRun()">Log Run</button>
+    </div>
+  </div>
+</div>
+
+<!-- Habit modal -->
+<div id="habit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+  <div class="absolute inset-0" style="background:rgba(12,26,46,0.6)" onclick="closeHabitModal()"></div>
+  <div class="card-elevated relative z-10 w-full max-w-md p-6">
+    <div class="font-700 text-lg mb-5" style="color:var(--text)">Add Habit</div>
+    <div class="space-y-3">
+      <input id="habit-name-input" class="field" placeholder="e.g. Morning run, Read 30 mins, Meditate" />
+      <div>
+        <label class="text-xs mb-1 block" style="color:#0369A1">Color</label>
+        <div class="flex gap-2 flex-wrap" id="habit-colors">
+          <button class="color-swatch selected" style="background:#0EA5E9;--sw-color:#0EA5E9" data-color="#0EA5E9" onclick="selectHabitColor(this)" title="Sky Blue" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#0284C7;--sw-color:#0284C7" data-color="#0284C7" onclick="selectHabitColor(this)" title="Ocean Blue" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#6366F1;--sw-color:#6366F1" data-color="#6366F1" onclick="selectHabitColor(this)" title="Indigo" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#8B5CF6;--sw-color:#8B5CF6" data-color="#8B5CF6" onclick="selectHabitColor(this)" title="Violet" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#A855F7;--sw-color:#A855F7" data-color="#A855F7" onclick="selectHabitColor(this)" title="Purple" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#EC4899;--sw-color:#EC4899" data-color="#EC4899" onclick="selectHabitColor(this)" title="Pink" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#F43F5E;--sw-color:#F43F5E" data-color="#F43F5E" onclick="selectHabitColor(this)" title="Rose" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#EF4444;--sw-color:#EF4444" data-color="#EF4444" onclick="selectHabitColor(this)" title="Red" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#F97316;--sw-color:#F97316" data-color="#F97316" onclick="selectHabitColor(this)" title="Orange" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#F59E0B;--sw-color:#F59E0B" data-color="#F59E0B" onclick="selectHabitColor(this)" title="Amber" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#EAB308;--sw-color:#EAB308" data-color="#EAB308" onclick="selectHabitColor(this)" title="Yellow" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#84CC16;--sw-color:#84CC16" data-color="#84CC16" onclick="selectHabitColor(this)" title="Lime" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#10B981;--sw-color:#10B981" data-color="#10B981" onclick="selectHabitColor(this)" title="Emerald" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#14B8A6;--sw-color:#14B8A6" data-color="#14B8A6" onclick="selectHabitColor(this)" title="Teal" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#06B6D4;--sw-color:#06B6D4" data-color="#06B6D4" onclick="selectHabitColor(this)" title="Cyan" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+          <button class="color-swatch" style="background:#64748B;--sw-color:#64748B" data-color="#64748B" onclick="selectHabitColor(this)" title="Slate" type="button"><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3 mt-5">
+      <button type="button" class="btn-ghost" onclick="closeHabitModal()">Cancel</button>
+      <button type="button" class="btn-primary" onclick="saveHabit()">Add Habit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  tasks: [],
+  studySessions: [],
+  runs: [],
+  habits: [],
+  habitLogs: {},   // { "habitId_YYYY-MM-DD": true }
+  journal: [],
+  raceInfo: { name: '', date: '', weeklyGoal: 40 },
+  pomodoro: { sessions: 0 },
+};
+
+function load() {
+  const s = localStorage.getItem('lifeos_state');
+  if (s) state = { ...state, ...JSON.parse(s) };
+}
+function save() {
+  localStorage.setItem('lifeos_state', JSON.stringify(state));
+}
+load();
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function today() { return new Date().toISOString().split('T')[0]; }
+function todayObj() { return new Date(); }
+function fmt(date) { return new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function startOfWeek(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff); date.setHours(0,0,0,0);
+  return date;
+}
+function isSameWeek(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const sw = startOfWeek(new Date());
+  const ew = new Date(sw); ew.setDate(ew.getDate() + 7);
+  return d >= sw && d < ew;
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function showView(name, navEl) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  else document.querySelector('[data-view=' + name + ']').classList.add('active');
+  closeSidebar();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'work') renderWork();
+  if (name === 'study') renderStudy();
+  if (name === 'marathon') renderMarathon();
+  if (name === 'habits') renderHabits();
+  if (name === 'journal') renderJournal();
+}
+
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+let weeklyChartInst;
+function renderDashboard() {
+  // Greeting
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = g + ', Marco 👋';
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Tasks
+  const todayTasks = state.tasks.filter(t => !t.archived);
+  const doneTasks = todayTasks.filter(t => t.status === 'done');
+  const total = todayTasks.length;
+  const pct = total ? Math.round(doneTasks.length / total * 100) : 0;
+  document.getElementById('stat-tasks').textContent = total;
+  document.getElementById('tasks-badge').textContent = doneTasks.length + ' done';
+  document.getElementById('tasks-prog').style.width = pct + '%';
+
+  // Study
+  const todaySessions = state.studySessions.filter(s => s.date === today());
+  const todayMins = todaySessions.reduce((a, s) => a + s.duration, 0);
+  const h2 = Math.floor(todayMins / 60), m2 = todayMins % 60;
+  document.getElementById('stat-study').textContent = h2 + 'h' + (m2 ? m2 + 'm' : '');
+  const studyPct = Math.min(100, Math.round(todayMins / 240 * 100));
+  document.getElementById('study-prog').style.width = studyPct + '%';
+
+  // Runs (this week)
+  const weekKm = state.runs.filter(r => isSameWeek(r.date)).reduce((a, r) => a + r.dist, 0);
+  const goal = state.raceInfo.weeklyGoal || 40;
+  document.getElementById('stat-km').textContent = weekKm.toFixed(1) + 'km';
+  document.getElementById('km-badge').textContent = 'Goal: ' + goal + 'km';
+  document.getElementById('km-prog').style.width = Math.min(100, Math.round(weekKm / goal * 100)) + '%';
+  document.getElementById('km-done-dash').textContent = weekKm.toFixed(1) + ' km done';
+  document.getElementById('km-goal-dash').textContent = 'Goal: ' + goal + ' km';
+  document.getElementById('km-dash-prog').style.width = Math.min(100, weekKm / goal * 100) + '%';
+
+  // Habits
+  const t = today();
+  const doneH = state.habits.filter(h => state.habitLogs[h.id + '_' + t]);
+  document.getElementById('stat-habits').textContent = doneH.length + '/' + state.habits.length;
+  const hpct = state.habits.length ? Math.round(doneH.length / state.habits.length * 100) : 0;
+  document.getElementById('habits-prog').style.width = hpct + '%';
+
+  // Today tasks list
+  const tl = document.getElementById('today-tasks-list');
+  const upcomingTasks = state.tasks.filter(t2 => t2.status !== 'done' && !t2.archived).slice(0, 5);
+  tl.innerHTML = upcomingTasks.map(t2 => `
+    <div class="flex items-center gap-2.5 text-sm">
+      <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${t2.priority==='high'?'#DC2626':t2.priority==='med'?'#F59E0B':'#10B981'}"></span>
+      <span class="truncate" style="color:var(--text)">${t2.title}</span>
+    </div>`).join('') || '<div class="text-sm" style="color:#0369A1">All done! 🎉</div>';
+
+  // Countdown
+  updateCountdown();
+
+  // Dashboard habits
+  const dh = document.getElementById('dash-habits');
+  const em = document.getElementById('habit-empty-msg');
+  if (!state.habits.length) { dh.innerHTML = ''; em.style.display = ''; }
+  else {
+    em.style.display = 'none';
+    dh.innerHTML = state.habits.map(h => {
+      const done = !!state.habitLogs[h.id + '_' + t];
+      return `<div class="flex items-center gap-3 cursor-pointer" onclick="toggleHabitDay('${h.id}','${t}')">
+        <div class="habit-dot ${done ? 'done' : ''}" style="${done ? 'background:' + h.color + ';border-color:' + h.color : ''}"></div>
+        <span class="text-sm ${done ? 'line-through' : ''}" style="color:${done ? '#94A3B8' : 'var(--text)'}">${h.name}</span>
+        ${done ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" style="margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Weekly chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const sw = startOfWeek(new Date());
+  const studyData = [], runData = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sw); d.setDate(sw.getDate() + i);
+    const ds = d.toISOString().split('T')[0];
+    const mins = state.studySessions.filter(s => s.date === ds).reduce((a, s) => a + s.duration, 0);
+    studyData.push(+(mins / 60).toFixed(1));
+    const km = state.runs.filter(r => r.date === ds).reduce((a, r) => a + r.dist, 0);
+    runData.push(+km.toFixed(1));
+  }
+
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  if (weeklyChartInst) weeklyChartInst.destroy();
+  weeklyChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [
+        { label: 'Study (h)', data: studyData, backgroundColor: 'rgba(14,165,233,0.75)', borderRadius: 6, borderSkipped: false },
+        { label: 'Run (km)', data: runData, backgroundColor: 'rgba(249,115,22,0.75)', borderRadius: 6, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' } },
+        y: { grid: { color: '#E0F2FE' }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' }, beginAtZero: true, suggestedMax: 8 },
+      }
+    }
+  });
+}
+
+// ─── COUNTDOWN ───────────────────────────────────────────────────────────────
+function updateCountdown() {
+  const ids = [
+    ['cd-days','cd-hours','cd-mins'],
+    ['m-cd-days','m-cd-hours','m-cd-mins'],
+  ];
+  if (!state.raceInfo.date) {
+    ids.forEach(([d,h,m]) => { setTxt(d,'--'); setTxt(h,'--'); setTxt(m,'--'); });
+    document.getElementById('race-name-dash').textContent = 'Set your race date →';
+    return;
+  }
+  const race = new Date(state.raceInfo.date + 'T00:00:00');
+  const now = new Date();
+  const diff = race - now;
+  if (diff < 0) {
+    ids.forEach(([d,h,m]) => { setTxt(d,'0'); setTxt(h,'0'); setTxt(m,'0'); });
+    return;
+  }
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  ids.forEach(([d,h,m]) => { setTxt(d,days); setTxt(h,hours); setTxt(m,mins); });
+  document.getElementById('race-name-dash').textContent = state.raceInfo.name || 'Race Day';
+}
+function setTxt(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+// ─── TASKS ───────────────────────────────────────────────────────────────────
+function openTaskModal()  { document.getElementById('task-modal').style.display = 'flex'; document.getElementById('task-title-input').focus(); }
+function closeTaskModal() { document.getElementById('task-modal').style.display = 'none'; }
+
+function saveTask() {
+  const title = document.getElementById('task-title-input').value.trim();
+  if (!title) return;
+  state.tasks.push({
+    id: uid(), title,
+    notes: document.getElementById('task-notes-input').value.trim(),
+    priority: document.getElementById('task-priority').value,
+    status: document.getElementById('task-status').value,
+    created: today(),
+  });
+  save(); closeTaskModal();
+  document.getElementById('task-title-input').value = '';
+  document.getElementById('task-notes-input').value = '';
+  renderWork();
+}
+
+function moveTask(id, status) {
+  const t = state.tasks.find(t => t.id === id);
+  if (t) { t.status = status; save(); renderWork(); }
+}
+function deleteTask(id) { state.tasks = state.tasks.filter(t => t.id !== id); save(); renderWork(); }
+
+function renderWork() {
+  const cols = { todo: [], inprog: [], done: [] };
+  state.tasks.forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
+
+  const pBadge = { high: 'badge-high', med: 'badge-med', low: 'badge-low' };
+  const pLabel = { high: 'High', med: 'Med', low: 'Low' };
+
+  function card(t) {
+    const nextStatus = t.status === 'todo' ? 'inprog' : t.status === 'inprog' ? 'done' : null;
+    const prevStatus = t.status === 'done' ? 'inprog' : t.status === 'inprog' ? 'todo' : null;
+    return `<div class="card p-4">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div class="font-600 text-sm leading-snug" style="color:var(--text)">${t.title}</div>
+        <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0 font-500 ${pBadge[t.priority]}">${pLabel[t.priority]}</span>
+      </div>
+      ${t.notes ? `<div class="text-xs mb-2" style="color:#0369A1">${t.notes}</div>` : ''}
+      <div class="flex items-center gap-2 mt-3 flex-wrap">
+        ${nextStatus ? `<button class="btn-ghost text-xs py-1 px-2.5" onclick="moveTask('${t.id}','${nextStatus}')">→ ${nextStatus === 'inprog' ? 'Start' : 'Done'}</button>` : ''}
+        ${prevStatus ? `<button class="btn-ghost text-xs py-1 px-2.5" onclick="moveTask('${t.id}','${prevStatus}')">← Back</button>` : ''}
+        <button class="btn-ghost text-xs py-1 px-2.5" onclick="deleteTask('${t.id}')" style="margin-left:auto;border-color:#FECACA;color:#EF4444">Delete</button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('col-todo').innerHTML = cols.todo.map(card).join('') || '<div class="text-xs text-center py-6" style="color:#94A3B8">Empty</div>';
+  document.getElementById('col-inprog').innerHTML = cols.inprog.map(card).join('') || '<div class="text-xs text-center py-6" style="color:#94A3B8">Empty</div>';
+  document.getElementById('col-done').innerHTML = cols.done.map(card).join('') || '<div class="text-xs text-center py-6" style="color:#94A3B8">Empty</div>';
+
+  document.getElementById('col-todo-cnt').textContent = cols.todo.length;
+  document.getElementById('col-prog-cnt').textContent = cols.inprog.length;
+  document.getElementById('col-done-cnt').textContent = cols.done.length;
+  document.getElementById('tasks-todo-count').textContent = cols.todo.length;
+  document.getElementById('tasks-prog-count').textContent = cols.inprog.length;
+  document.getElementById('tasks-done-count').textContent = cols.done.length;
+}
+
+// ─── POMODORO ─────────────────────────────────────────────────────────────────
+let pomoTimer = null, pomoTotal = 25*60, pomoLeft = 25*60, pomoRunning = false, pomoLabel = 'Focus';
+
+function setPomodoro(mins, label) {
+  clearInterval(pomoTimer); pomoRunning = false;
+  pomoTotal = mins * 60; pomoLeft = pomoTotal; pomoLabel = label;
+  document.getElementById('pomo-start').textContent = 'Start';
+  document.getElementById('pomo-label').textContent = label;
+  updatePomoDisplay();
+}
+
+function togglePomodoro() {
+  if (pomoRunning) {
+    clearInterval(pomoTimer); pomoRunning = false;
+    document.getElementById('pomo-start').textContent = 'Resume';
+  } else {
+    pomoRunning = true;
+    document.getElementById('pomo-start').textContent = 'Pause';
+    pomoTimer = setInterval(() => {
+      pomoLeft--;
+      if (pomoLeft <= 0) {
+        clearInterval(pomoTimer); pomoRunning = false;
+        document.getElementById('pomo-start').textContent = 'Start';
+        if (pomoLabel === 'Focus') {
+          state.pomodoro.sessions = (state.pomodoro.sessions || 0) + 1;
+          save();
+          document.getElementById('pomo-sessions').textContent = state.pomodoro.sessions;
+        }
+        pomoLeft = 0;
+      }
+      updatePomoDisplay();
+    }, 1000);
+  }
+}
+
+function resetPomodoro() {
+  clearInterval(pomoTimer); pomoRunning = false;
+  pomoLeft = pomoTotal;
+  document.getElementById('pomo-start').textContent = 'Start';
+  updatePomoDisplay();
+}
+
+function updatePomoDisplay() {
+  const m = Math.floor(pomoLeft / 60), s = pomoLeft % 60;
+  document.getElementById('pomo-time').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const pct = pomoLeft / pomoTotal;
+  const circ = 2 * Math.PI * 60;
+  document.getElementById('pomodoro-ring').style.strokeDashoffset = circ * (1 - pct);
+  document.getElementById('pomo-sessions').textContent = state.pomodoro.sessions || 0;
+}
+updatePomoDisplay();
+
+// ─── STUDY ───────────────────────────────────────────────────────────────────
+let studyChartInst;
+function openStudyModal() {
+  document.getElementById('study-date').value = today();
+  document.getElementById('study-modal').style.display = 'flex';
+  document.getElementById('study-subject').focus();
+}
+function closeStudyModal() { document.getElementById('study-modal').style.display = 'none'; }
+
+function saveStudySession() {
+  const subject = document.getElementById('study-subject').value.trim();
+  const duration = parseInt(document.getElementById('study-duration').value);
+  if (!subject || !duration) return;
+  state.studySessions.push({
+    id: uid(), subject, duration,
+    date: document.getElementById('study-date').value || today(),
+    notes: document.getElementById('study-notes').value.trim(),
+  });
+  save(); closeStudyModal();
+  document.getElementById('study-subject').value = '';
+  document.getElementById('study-duration').value = '';
+  document.getElementById('study-notes').value = '';
+  renderStudy();
+}
+
+function deleteSession(id) {
+  state.studySessions = state.studySessions.filter(s => s.id !== id);
+  save(); renderStudy();
+}
+
+function renderStudy() {
+  const todaySessions = state.studySessions.filter(s => s.date === today());
+  const todayMins = todaySessions.reduce((a, s) => a + s.duration, 0);
+  const weekSessions = state.studySessions.filter(s => isSameWeek(s.date));
+  const weekMins = weekSessions.reduce((a, s) => a + s.duration, 0);
+  const totalMins = state.studySessions.reduce((a, s) => a + s.duration, 0);
+
+  document.getElementById('study-today-h').textContent = Math.floor(todayMins/60) + 'h ' + (todayMins%60) + 'm';
+  document.getElementById('study-week-h').textContent = (weekMins/60).toFixed(1) + 'h';
+  document.getElementById('study-total-h').textContent = (totalMins/60).toFixed(1) + 'h';
+
+  // Streak
+  let streak = 0, d = new Date();
+  while (true) {
+    const ds = d.toISOString().split('T')[0];
+    if (state.studySessions.some(s => s.date === ds)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  document.getElementById('study-streak').textContent = streak;
+
+  // Subjects
+  const subjectMap = {};
+  state.studySessions.forEach(s => { subjectMap[s.subject] = (subjectMap[s.subject] || 0) + s.duration; });
+  const subjects = Object.entries(subjectMap).sort((a,b) => b[1]-a[1]);
+  const sl = document.getElementById('subject-list');
+  const ns = document.getElementById('no-subjects');
+  if (!subjects.length) { sl.innerHTML = ''; ns.style.display = ''; }
+  else {
+    ns.style.display = 'none';
+    const maxMins = subjects[0][1];
+    sl.innerHTML = subjects.map(([name, mins]) => `
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span class="font-500" style="color:var(--text)">${name}</span>
+          <span style="color:#0369A1">${(mins/60).toFixed(1)}h</span>
+        </div>
+        <div class="prog-bar"><div class="prog-fill green" style="width:${Math.round(mins/maxMins*100)}%"></div></div>
+      </div>`).join('');
+  }
+
+  // Sessions
+  const slist = document.getElementById('sessions-list');
+  const nss = document.getElementById('no-sessions');
+  const recent = [...state.studySessions].reverse().slice(0, 20);
+  if (!recent.length) { slist.innerHTML = ''; nss.style.display = ''; }
+  else {
+    nss.style.display = 'none';
+    slist.innerHTML = recent.map(s => `
+      <div class="flex items-center gap-3 p-3 rounded-xl" style="background:#F8FAFC">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:#F0F9FF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-600 text-sm" style="color:var(--text)">${s.subject}</div>
+          <div class="text-xs" style="color:#0369A1">${fmt(s.date)} · ${s.duration >= 60 ? Math.floor(s.duration/60)+'h '+(s.duration%60?s.duration%60+'m':'') : s.duration+'m'}</div>
+          ${s.notes ? `<div class="text-xs mt-0.5 truncate" style="color:#64748B">${s.notes}</div>` : ''}
+        </div>
+        <button class="btn-ghost text-xs py-1 px-2" onclick="deleteSession('${s.id}')" style="border-color:#FECACA;color:#EF4444;flex-shrink:0">Delete</button>
+      </div>`).join('');
+  }
+
+  // Weekly chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const sw = startOfWeek(new Date());
+  const chartData = [];
+  for (let i = 0; i < 7; i++) {
+    const d2 = new Date(sw); d2.setDate(sw.getDate() + i);
+    const ds = d2.toISOString().split('T')[0];
+    const mins = state.studySessions.filter(s => s.date === ds).reduce((a, s) => a + s.duration, 0);
+    chartData.push(+(mins/60).toFixed(1));
+  }
+  const ctx = document.getElementById('studyChart').getContext('2d');
+  if (studyChartInst) studyChartInst.destroy();
+  studyChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [{ label: 'Study hours', data: chartData, backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 8, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' } },
+        y: { grid: { color: '#E0F2FE' }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' }, beginAtZero: true, suggestedMax: 6 },
+      }
+    }
+  });
+}
+
+// ─── MARATHON ────────────────────────────────────────────────────────────────
+let runChartInst;
+function openRunModal()  { document.getElementById('run-date').value = today(); document.getElementById('run-modal').style.display = 'flex'; document.getElementById('run-dist').focus(); }
+function closeRunModal() { document.getElementById('run-modal').style.display = 'none'; }
+
+function saveRaceInfo() {
+  state.raceInfo.name = document.getElementById('race-name-input').value;
+  state.raceInfo.date = document.getElementById('race-date-input').value;
+  state.raceInfo.weeklyGoal = parseFloat(document.getElementById('weekly-km-goal').value) || 40;
+  save(); updateCountdown(); renderMarathonStats();
+}
+
+function saveRun() {
+  const dist = parseFloat(document.getElementById('run-dist').value);
+  if (!dist) return;
+  const h = parseInt(document.getElementById('run-h').value) || 0;
+  const m = parseInt(document.getElementById('run-m').value) || 0;
+  const s = parseInt(document.getElementById('run-s').value) || 0;
+  const totalSecs = h*3600 + m*60 + s;
+  state.runs.push({
+    id: uid(), dist, totalSecs,
+    date: document.getElementById('run-date').value || today(),
+    type: document.getElementById('run-type').value,
+    notes: document.getElementById('run-notes').value.trim(),
+  });
+  save(); closeRunModal();
+  ['run-dist','run-h','run-m','run-s','run-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  renderMarathon();
+}
+
+function deleteRun(id) { state.runs = state.runs.filter(r => r.id !== id); save(); renderMarathon(); }
+
+function fmtDuration(secs) {
+  if (!secs) return '--';
+  const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+  return (h ? h+'h ' : '') + m + 'm ' + (s ? s+'s' : '');
+}
+function fmtPace(dist, secs) {
+  if (!dist || !secs) return '--';
+  const paceSeconds = secs / dist;
+  const m = Math.floor(paceSeconds / 60), s = Math.round(paceSeconds % 60);
+  return m + ':' + String(s).padStart(2,'0') + '/km';
+}
+
+function calcPace() {
+  const dist = parseFloat(document.getElementById('pace-dist').value) || 0;
+  const h = parseInt(document.getElementById('pace-h').value) || 0;
+  const m = parseInt(document.getElementById('pace-m').value) || 0;
+  const s = parseInt(document.getElementById('pace-s').value) || 0;
+  const totalSecs = h*3600 + m*60 + s;
+  if (!dist || !totalSecs) return;
+  const paceS = totalSecs / dist;
+  const pm = Math.floor(paceS/60), ps = Math.round(paceS%60);
+  document.getElementById('pace-result').textContent = pm + ':' + String(ps).padStart(2,'0') + ' min/km';
+  document.getElementById('speed-result').textContent = (dist / (totalSecs/3600)).toFixed(2) + ' km/h';
+}
+
+function renderMarathonStats() {
+  const weekKm = state.runs.filter(r => isSameWeek(r.date)).reduce((a, r) => a + r.dist, 0);
+  const goal = state.raceInfo.weeklyGoal || 40;
+  const pct = Math.min(100, weekKm / goal * 100);
+  document.getElementById('weekly-km-bar').style.width = pct + '%';
+  document.getElementById('km-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('km-done-label').textContent = weekKm.toFixed(1) + ' km done';
+  document.getElementById('km-goal-label').textContent = 'Goal: ' + goal + ' km';
+  document.getElementById('run-total-km').textContent = state.runs.reduce((a,r) => a + r.dist, 0).toFixed(1);
+  document.getElementById('run-week-km').textContent = weekKm.toFixed(1);
+  document.getElementById('run-longest').textContent = (state.runs.length ? Math.max(...state.runs.map(r => r.dist)).toFixed(1) : '0') + ' km';
+  document.getElementById('run-count').textContent = state.runs.length;
+}
+
+function renderMarathon() {
+  // Restore inputs
+  document.getElementById('race-name-input').value = state.raceInfo.name || '';
+  document.getElementById('race-date-input').value = state.raceInfo.date || '';
+  document.getElementById('weekly-km-goal').value = state.raceInfo.weeklyGoal || 40;
+  updateCountdown();
+  renderMarathonStats();
+
+  // Run table
+  const tbody = document.getElementById('run-table-body');
+  const nr = document.getElementById('no-runs');
+  if (!state.runs.length) { tbody.innerHTML = ''; nr.style.display = ''; }
+  else {
+    nr.style.display = 'none';
+    const sorted = [...state.runs].sort((a,b) => b.date.localeCompare(a.date));
+    const typeColors = { Easy:'#10B981', Tempo:'#0EA5E9', Intervals:'#F59E0B', 'Long Run':'#F97316', Race:'#DC2626', Recovery:'#A855F7' };
+    tbody.innerHTML = sorted.map(r => `
+      <tr class="run-row" style="border-bottom:1px solid #F0F9FF">
+        <td class="py-3 px-3 text-sm" style="color:var(--text)">${fmt(r.date)}</td>
+        <td class="py-3 px-3 font-600 text-sm" style="color:var(--text)">${r.dist.toFixed(1)} km</td>
+        <td class="py-3 px-3 text-sm" style="color:#0369A1">${fmtDuration(r.totalSecs)}</td>
+        <td class="py-3 px-3 text-sm font-500" style="color:var(--text)">${fmtPace(r.dist, r.totalSecs)}</td>
+        <td class="py-3 px-3">
+          <span class="text-xs px-2 py-0.5 rounded-full font-500" style="background:${typeColors[r.type]+'20'};color:${typeColors[r.type]}">${r.type}</span>
+        </td>
+        <td class="py-3 px-3 text-xs max-w-32 truncate" style="color:#64748B">${r.notes || '—'}</td>
+        <td class="py-3 px-3">
+          <button class="btn-ghost text-xs py-1 px-2" onclick="deleteRun('${r.id}')" style="border-color:#FECACA;color:#EF4444">Delete</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  // Last 8 weeks chart
+  const weeks = [];
+  const now = new Date();
+  for (let i = 7; i >= 0; i--) {
+    const sw2 = startOfWeek(new Date(now)); sw2.setDate(sw2.getDate() - i*7);
+    const ew2 = new Date(sw2); ew2.setDate(sw2.getDate() + 7);
+    const km = state.runs
+      .filter(r => { const d = new Date(r.date+'T00:00:00'); return d >= sw2 && d < ew2; })
+      .reduce((a,r) => a + r.dist, 0);
+    const label = 'W' + (8-i);
+    weeks.push({ label, km: +km.toFixed(1) });
+  }
+  const ctx = document.getElementById('runChart').getContext('2d');
+  if (runChartInst) runChartInst.destroy();
+  runChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [{
+        label: 'km', data: weeks.map(w => w.km),
+        backgroundColor: weeks.map((w,i) => i===7 ? 'rgba(249,115,22,0.85)' : 'rgba(249,115,22,0.4)'),
+        borderRadius: 8, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' } },
+        y: { grid: { color: '#E0F2FE' }, ticks: { font: { family: 'Plus Jakarta Sans', size: 12 }, color: '#0369A1' }, beginAtZero: true, suggestedMax: 40 },
+      }
+    }
+  });
+}
+
+// ─── HABITS ──────────────────────────────────────────────────────────────────
+let selectedHabitColor = '#0EA5E9';
+
+function openHabitModal() {
+  document.getElementById('habit-modal').style.display = 'flex';
+  document.getElementById('habit-name-input').value = '';
+  document.getElementById('habit-name-input').focus();
+  // Reset colour selection to first swatch
+  selectedHabitColor = '#0EA5E9';
+  document.querySelectorAll('#habit-colors .color-swatch').forEach((d, i) => {
+    d.classList.toggle('selected', i === 0);
+  });
+}
+function closeHabitModal() { document.getElementById('habit-modal').style.display = 'none'; }
+
+function selectHabitColor(el) {
+  document.querySelectorAll('#habit-colors .color-swatch').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedHabitColor = el.dataset.color;
+}
+
+function saveHabit() {
+  const name = document.getElementById('habit-name-input').value.trim();
+  if (!name) return;
+  state.habits.push({ id: uid(), name, color: selectedHabitColor });
+  save(); closeHabitModal();
+  document.getElementById('habit-name-input').value = '';
+  renderHabits();
+}
+
+function deleteHabit(id) {
+  state.habits = state.habits.filter(h => h.id !== id);
+  Object.keys(state.habitLogs).forEach(k => { if (k.startsWith(id + '_')) delete state.habitLogs[k]; });
+  save(); renderHabits();
+}
+
+function toggleHabitDay(habitId, dateStr) {
+  const key = habitId + '_' + dateStr;
+  if (state.habitLogs[key]) delete state.habitLogs[key];
+  else state.habitLogs[key] = true;
+  save(); renderHabits(); renderDashboard();
+}
+
+function habitStreak(habitId) {
+  let streak = 0; const d = new Date();
+  while (true) {
+    const ds = d.toISOString().split('T')[0];
+    if (state.habitLogs[habitId + '_' + ds]) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+
+function renderHabits() {
+  const grid = document.getElementById('habit-grid');
+  const header = document.getElementById('habit-grid-header');
+  const noMsg = document.getElementById('no-habits-msg');
+  const streaksList = document.getElementById('streaks-list');
+
+  // 7 days header
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const sw = startOfWeek(new Date());
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sw); d.setDate(sw.getDate() + i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  header.innerHTML = dates.map((ds, i) => `
+    <div class="w-7 text-center text-xs font-600" style="color:${ds===today()?'var(--primary)':'#0369A1'}">${dayNames[i]}</div>
+  `).join('');
+
+  if (!state.habits.length) {
+    grid.innerHTML = ''; noMsg.style.display = ''; streaksList.innerHTML = '';
+    return;
+  }
+  noMsg.style.display = 'none';
+
+  grid.innerHTML = state.habits.map(h => `
+    <div class="flex items-center gap-3 py-1">
+      <div class="flex items-center gap-2 w-44 flex-shrink-0 min-w-0">
+        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${h.color}"></span>
+        <span class="text-sm font-500 truncate flex-1" style="color:var(--text)" title="${h.name}">${h.name}</span>
+      </div>
+      <div class="flex gap-2">
+        ${dates.map(ds => {
+          const done = !!state.habitLogs[h.id + '_' + ds];
+          return `<div class="habit-dot ${done ? 'done' : ''}" style="${done ? 'background:'+h.color+';border-color:'+h.color : ''}" onclick="toggleHabitDay('${h.id}','${ds}')" title="${ds}" tabindex="0" role="checkbox" aria-checked="${done}" aria-label="${h.name} on ${ds}"></div>`;
+        }).join('')}
+      </div>
+      <button type="button" onclick="deleteHabit('${h.id}')" title="Delete habit"
+        style="margin-left:auto;flex-shrink:0;width:30px;height:30px;border-radius:8px;border:1.5px solid #FECACA;background:#FFF5F5;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 150ms,border-color 150ms"
+        onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='#FFF5F5'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
+    </div>`).join('');
+
+  // Streaks
+  const sorted = [...state.habits].map(h => ({ ...h, streak: habitStreak(h.id) })).sort((a,b) => b.streak - a.streak);
+  streaksList.innerHTML = sorted.map(h => `
+    <div class="flex items-center gap-3">
+      <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${h.color}"></span>
+      <span class="text-sm font-500 flex-1" style="color:var(--text)">${h.name}</span>
+      <span class="flex items-center gap-1 font-700 text-sm" style="color:#F97316">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#F97316" stroke="none"><path d="M12 2c0 0-7 6-7 12a7 7 0 0 0 14 0c0-6-7-12-7-12z"/></svg>
+        ${h.streak} day${h.streak !== 1 ? 's' : ''}
+      </span>
+    </div>`).join('');
+}
+
+// ─── JOURNAL ─────────────────────────────────────────────────────────────────
+function renderJournal() {
+  document.getElementById('journal-date-label').textContent = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const container = document.getElementById('journal-entries');
+  const empty = document.getElementById('no-journal');
+  if (!state.journal.length) { container.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  const moodEmoji = { great:'😄', good:'🙂', okay:'😐', tired:'😴', stressed:'😰' };
+  container.innerHTML = [...state.journal].reverse().map(e => `
+    <div class="card journal-entry p-5 cursor-pointer">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <div class="font-700 text-base" style="color:var(--text)">${e.title || 'Untitled entry'}</div>
+          <div class="text-xs mt-0.5" style="color:#0369A1">${new Date(e.ts).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' })}</div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          ${e.mood ? `<span class="text-sm">${moodEmoji[e.mood] || ''}</span>` : ''}
+          <button class="btn-ghost text-xs py-1 px-2.5" onclick="deleteJournalEntry('${e.id}')" style="border-color:#FECACA;color:#EF4444">Delete</button>
+        </div>
+      </div>
+      <div class="text-sm leading-relaxed whitespace-pre-wrap" style="color:#334155">${e.body}</div>
+    </div>`).join('');
+}
+
+function saveJournalEntry() {
+  const body = document.getElementById('journal-body').value.trim();
+  if (!body) return;
+  state.journal.push({
+    id: uid(),
+    title: document.getElementById('journal-title').value.trim(),
+    body,
+    mood: document.getElementById('journal-mood').value,
+    ts: Date.now(),
+  });
+  save();
+  document.getElementById('journal-title').value = '';
+  document.getElementById('journal-body').value = '';
+  document.getElementById('journal-mood').value = '';
+  renderJournal();
+}
+
+function deleteJournalEntry(id) { state.journal = state.journal.filter(e => e.id !== id); save(); renderJournal(); }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderDashboard();
+
+// Countdown tick
+setInterval(updateCountdown, 60000);
+</script>
+</body>
+</html>
