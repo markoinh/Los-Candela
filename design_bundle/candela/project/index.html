@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Los Candela — Chicha Psicodélica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<style>
+  :root {
+    --bg: #0D0904;
+    --gold: #D4A017;
+    --orange: #E8601C;
+    --red: #C2321A;
+    --teal: #2A9B7A;
+    --cream: #F0E6C8;
+    --purple: #8B3FA8;
+    --dark2: #1A1208;
+    --dark3: #221A08;
+    --muted: rgba(240,230,200,0.4);
+    --muted2: rgba(240,230,200,0.55);
+    --muted3: rgba(240,230,200,0.7);
+    --cursor-blend: screen;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s ease, background 0.3s ease;
+    mix-blend-mode: var(--cursor-blend);
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transition: transform 0.18s ease, border-color 0.3s ease;
+    mix-blend-mode: var(--cursor-blend);
+  }
+
+  /* Zigzag SVG pattern used as section divider */
+  .zigzag-divider {
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  @keyframes psychedelic-hue {
+    0%   { filter: hue-rotate(0deg) brightness(1); }
+    25%  { filter: hue-rotate(20deg) brightness(1.05); }
+    50%  { filter: hue-rotate(-15deg) brightness(0.95); }
+    75%  { filter: hue-rotate(30deg) brightness(1.08); }
+    100% { filter: hue-rotate(0deg) brightness(1); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-14px); }
+  }
+  @keyframes zigzag-slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px 4px rgba(212,160,23,0.3); }
+    50% { box-shadow: 0 0 50px 12px rgba(232,96,28,0.5); }
+  }
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 24%, 55% { opacity: 0.4; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes particle-drift {
+    0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+    100% { transform: translateY(-120vh) translateX(var(--dx)) scale(0.2); opacity: 0; }
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.2rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.4s, backdrop-filter 0.4s;
+  }
+  nav.scrolled {
+    background: rgba(13,9,4,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(212,160,23,0.2);
+    transition: background 0.4s;
+  }
+  [data-theme="day"] nav.scrolled {
+    background: rgba(255,248,237,0.95);
+    border-bottom-color: rgba(155,110,0,0.2);
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--cream); font-family: 'Caveat', cursive; font-size: 1rem; display: block; line-height: 0.8; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    transition: opacity 0.2s, color 0.2s;
+  }
+  .nav-links a:hover { opacity: 1; color: var(--gold); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 50% 60%, #2a1800 0%, #0D0904 65%);
+  }
+  .hero-particles { position: absolute; inset: 0; pointer-events: none; }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    animation: particle-drift linear infinite;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 2rem;
+  }
+  .hero-los {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(2rem, 5vw, 4rem);
+    color: var(--gold);
+    display: block;
+    letter-spacing: 0.05em;
+    margin-bottom: -0.5rem;
+    animation: float 5s ease-in-out infinite;
+  }
+  .hero-candela {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 6vw, 6rem);
+    white-space: nowrap;
+    overflow: visible;
+    padding-right: 0.5em;
+    line-height: 0.85;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--orange) 40%, var(--red) 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: psychedelic-hue 8s ease-in-out infinite;
+    text-shadow: none;
+    display: block;
+  }
+  .hero-sub {
+    font-family: 'Caveat', cursive;
+    font-size: clamp(1.1rem, 3vw, 2rem);
+    color: var(--teal);
+    letter-spacing: 0.1em;
+    margin-top: 0.5rem;
+    animation: flicker 6s ease-in-out infinite;
+  }
+  .hero-location {
+    font-size: 0.72rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(240,230,200,0.4);
+    margin-top: 1.5rem;
+  }
+  .hero-cta-group {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    margin-top: 3rem;
+  }
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    padding: 0.85rem 2.2rem;
+    white-space: nowrap;
+    border: none;
+    cursor: none;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.15s, box-shadow 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn:hover { transform: translateY(-3px); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--gold), var(--orange));
+    color: #0D0904;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--cream);
+    border: 1.5px solid rgba(240,230,200,0.3);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Animated zigzag runner */
+  .zz-runner {
+    width: 100%;
+    overflow: hidden;
+    height: 24px;
+    position: relative;
+  }
+  .zz-runner-inner {
+    display: flex;
+    width: 200%;
+    animation: marquee 8s linear infinite;
+  }
+
+  /* SECTIONS */
+  section { padding: 6rem 2rem; }
+  .section-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    line-height: 0.9;
+    letter-spacing: 0.03em;
+    color: var(--cream);
+  }
+  .section-title span { color: var(--orange); }
+  .max-w { max-width: 1100px; margin: 0 auto; }
+
+  /* ABOUT */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+    margin-top: 4rem;
+  }
+  .about-text p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--muted3);
+    margin-bottom: 1.2rem;
+  }
+  .about-text p strong { color: var(--cream); font-weight: 500; }
+  .about-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sun-graphic {
+    width: 260px;
+    height: 260px;
+    position: relative;
+    animation: spin-slow 20s linear infinite;
+  }
+  .sun-inner {
+    position: absolute;
+    inset: 30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold) 30%, var(--orange) 70%, var(--red) 100%);
+    animation: psychedelic-hue 5s ease-in-out infinite;
+  }
+
+  /* SHOWS */
+  .shows-bg {
+    background: var(--dark2);
+    position: relative;
+  }
+  .shows-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 3rem;
+  }
+  .show-row {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.6rem 0;
+    border-bottom: 1px solid rgba(128,100,50,0.12);
+    transition: background 0.2s, padding-left 0.2s;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .show-row::before {
+    content: '';
+    position: absolute;
+    left: -100%;
+    top: 0; bottom: 0;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212,160,23,0.06), transparent);
+    transition: left 0.4s;
+  }
+  .show-row:hover::before { left: 100%; }
+  .show-row:hover { padding-left: 1rem; }
+  .show-date {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+  .show-date span { display: block; font-size: 0.75rem; letter-spacing: 0.15em; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+  .show-info h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.05em;
+    color: var(--cream);
+  }
+  .show-info p { font-size: 0.82rem; color: var(--muted2); margin-top: 0.2rem; }
+  .show-tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.9rem;
+    border: 1px solid;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+  .tag-sold { border-color: var(--red); color: var(--red); }
+  .tag-tickets { border-color: var(--teal); color: var(--teal); cursor: none; }
+  .tag-tickets:hover { background: var(--teal); color: var(--bg); }
+
+  /* SOUND */
+  .sound-section {
+    background: linear-gradient(180deg, #0D0904 0%, #150E05 50%, #0D0904 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .sound-orbs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.12;
+    animation: float ease-in-out infinite;
+  }
+  .sound-content { position: relative; z-index: 2; }
+  .sound-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 4rem;
+  }
+  .sound-card {
+    background: var(--dark2);
+    padding: 2.5rem 2rem;
+    transition: background 0.3s, transform 0.3s;
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .sound-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold), var(--orange));
+    transition: width 0.4s ease;
+  }
+  .sound-card:hover::after { width: 100%; }
+  .sound-card:hover { background: #221A08; transform: translateY(-4px); }
+  .sound-card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    animation: float 4s ease-in-out infinite;
+  }
+  .sound-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+  .sound-card p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--muted2);
+  }
+
+  /* PLAYERS / MEMBERS */
+  .members-section { background: var(--dark3); }
+  .members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1px;
+    margin-top: 3rem;
+    background: rgba(240,230,200,0.06);
+  }
+  .member-card {
+    background: var(--dark3);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: background 0.25s;
+    cursor: none;
+  }
+  .member-card:hover { background: var(--dark2); }
+  .member-avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    position: relative;
+  }
+  .member-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    color: var(--cream);
+  }
+  .member-role {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* CONTACT */
+  .contact-section {
+    background: var(--bg);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .contact-section::before {
+    content: 'CANDELA';
+    position: absolute;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 25vw;
+    color: rgba(212,160,23,0.03);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .contact-inner { position: relative; z-index: 2; }
+  .contact-email {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 3rem);
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+    display: inline-block;
+    margin-top: 2rem;
+  }
+  .contact-email:hover { color: var(--orange); }
+
+  /* FOOTER */
+  footer {
+    background: #080503;
+    padding: 2rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(212,160,23,0.15);
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .footer-logo span { font-family: 'Caveat', cursive; font-size: 0.9rem; color: rgba(240,230,200,0.4); display: block; }
+  footer p { font-size: 0.7rem; color: rgba(240,230,200,0.25); letter-spacing: 0.1em; }
+
+  /* REVEAL */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── DAY THEME ───────────────────────────────────────────── */
+  [data-theme="day"] {
+    --bg: #FFF8ED;
+    --gold: #9B6E00;
+    --orange: #C84E0A;
+    --red: #A82010;
+    --teal: #1A7A5E;
+    --cream: #1A0E00;
+    --purple: #6E2F8A;
+    --dark2: #F5ECD5;
+    --dark3: #EDE0C4;
+    --muted: rgba(26,14,0,0.4);
+    --muted2: rgba(26,14,0,0.55);
+    --muted3: rgba(26,14,0,0.7);
+    --cursor-blend: multiply;
+  }
+  [data-theme="day"] body { background: #FFF8ED; color: #1A0E00; }
+  [data-theme="day"] .hero {
+    background: radial-gradient(ellipse at 50% 60%, #FFE8B0 0%, #FFF8ED 65%);
+  }
+  [data-theme="day"] .hero-location { color: rgba(26,14,0,0.4); }
+  [data-theme="day"] .hero-candela {
+    background: linear-gradient(135deg, #9B6E00 0%, #C84E0A 40%, #A82010 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  [data-theme="day"] .about-text p { color: rgba(26,14,0,0.7); }
+  [data-theme="day"] .about-text p strong { color: #1A0E00; }
+  [data-theme="day"] .shows-bg { background: #F5ECD5; }
+  [data-theme="day"] .show-row { border-bottom-color: rgba(26,14,0,0.1); }
+  [data-theme="day"] .show-info p { color: rgba(26,14,0,0.5); }
+  [data-theme="day"] .sound-section { background: linear-gradient(180deg, #FFF8ED 0%, #F5ECD5 50%, #FFF8ED 100%); }
+  [data-theme="day"] .sound-card { background: #F5ECD5; }
+  [data-theme="day"] .sound-card:hover { background: #EDE0C4; }
+  [data-theme="day"] .sound-card p { color: rgba(26,14,0,0.6); }
+  [data-theme="day"] .members-section { background: #EDE0C4; }
+  [data-theme="day"] .member-card { background: #EDE0C4; }
+  [data-theme="day"] .member-card:hover { background: #F5ECD5; }
+  [data-theme="day"] .member-role { color: rgba(26,14,0,0.4); }
+  [data-theme="day"] .contact-section { background: #FFF8ED; }
+  [data-theme="day"] .contact-section::before { color: rgba(155,110,0,0.05); }
+  [data-theme="day"] footer { background: #EDE0C4; border-top-color: rgba(155,110,0,0.25); }
+  [data-theme="day"] .footer-logo span { color: rgba(26,14,0,0.4); }
+  [data-theme="day"] footer p { color: rgba(26,14,0,0.3); }
+  [data-theme="day"] .section-title { color: #1A0E00; }
+  [data-theme="day"] .nav-links a { color: #1A0E00; }
+  [data-theme="day"] nav.scrolled { background: rgba(255,248,237,0.92); border-bottom-color: rgba(155,110,0,0.2); }
+  [data-theme="day"] .show-date span { color: rgba(26,14,0,0.4); }
+  [data-theme="day"] .show-info h3 { color: #1A0E00; }
+  [data-theme="day"] .members-grid { background: rgba(26,14,0,0.06); }
+
+  @media (max-width: 768px) {
+    .about-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .sound-grid { grid-template-columns: 1fr; }
+    .show-row { grid-template-columns: 80px 1fr; }
+    .show-tag { display: none; }
+    .nav-links { display: none; }
+    .hero-candela { font-size: 22vw; }
+  }
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#0D0904">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0D0904"/>
+    <text x="600" y="320" text-anchor="middle" font-family="serif" font-size="60" fill="rgba(240,230,200,0.5)" letter-spacing="4">Los</text>
+    <text x="600" y="480" text-anchor="middle" font-family="serif" font-size="180" font-weight="bold" fill="#D4A017" letter-spacing="8">CANDELA</text>
+    <text x="600" y="560" text-anchor="middle" font-family="serif" font-size="36" fill="#2A9B7A" letter-spacing="6">Chicha Psicodélica</text>
+    <!-- zigzag lines -->
+    <polyline points="0,620 40,640 80,620 120,640 160,620 200,640 240,620 280,640 320,620 360,640 400,620 440,640 480,620 520,640 560,620 600,640 640,620 680,640 720,620 760,640 800,620 840,640 880,620 920,640 960,620 1000,640 1040,620 1080,640 1120,620 1160,640 1200,620" stroke="#D4A017" stroke-width="3" fill="none"/>
+    <polyline points="0,660 40,680 80,660 120,680 160,660 200,680 240,660 280,680 320,660 360,680 400,660 440,680 480,660 520,680 560,660 600,680 640,660 680,680 720,660 760,680 800,660 840,680 880,660 920,680 960,660 1000,680 1040,660 1080,680 1120,660 1160,680 1200,660" stroke="#E8601C" stroke-width="3" fill="none"/>
+  </svg>
+</template>
+</head>
+<body>
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ── Translations ──────────────────────────────────────────────────
+const COPY = {
+  es: {
+    nav: ['Sobre Nosotros','Shows','Sonido','Banda','Contacto'],
+    heroSub: 'Chicha Psicodélica',
+    heroLocation: 'Hobart, Tasmania · Lutruwita',
+    heroCta1: 'Próximos Shows',
+    heroCta2: 'La Banda',
+    aboutLabel: 'Quiénes Somos',
+    aboutTitle: ['Fuego del Sur,', 'Ritmo del Mundo'],
+    aboutP1: '<strong>Los Candela</strong> son una fuerza de la naturaleza — una banda de chicha psicodélica que hace arder el extremo sur del mundo. Desde las calles de <strong>Hobart, Tasmania</strong>, invocan los espíritus de Lima, Bogotá y más allá con un sonido que no pide permiso.',
+    aboutP2: 'Guitarras que vuelan, bajos que tiemblan, percusión que no da tregua. Los Candela mezclan la magia hipnótica de la <strong>cumbia psicodélica</strong> con la energía cruda de un sur que tiene mucho que decir.',
+    aboutP3: 'Si lo sientes en el pecho, lo estás escuchando bien.',
+    stats: [['~','Shows al año'],['∞','Energía en vivo'],['1','Hobart']],
+    showsLabel: 'Fechas 2026',
+    showsTitle: ['Próximos','Shows'],
+    tagSold: 'Agotado',
+    tagTickets: 'Entradas',
+    soundLabel: 'El Sonido',
+    soundTitle: ['Chicha desde','el Fin del Mundo'],
+    soundCards: [
+      { icon:'🎸', title:'Guitarra Wah', text:'Pedales que lloran, riffs que te persiguen hasta el amanecer. La guitarra de Los Candela es un diálogo entre el desierto andino y el viento del Antártico.' },
+      { icon:'🥁', title:'Ritmo Sin Freno', text:'La percusión es el corazón de la chicha — sin pausa, sin disculpa. Congas, timbales y bombos construyen un trance del que no querés salir.' },
+      { icon:'🎹', title:'Teclados del Espacio', text:'Órganos que flotan, sintetizadores que vibran en frecuencias que el oído apenas puede seguir. Psicodelia pura, a temperatura tropical.' },
+    ],
+    playerTitle: 'Fuego del Sur — Demo 2025',
+    bandLabel: 'La Banda',
+    bandTitle: ['Seis Almas,','Un Fuego'],
+    contactLabel: 'Contacto',
+    contactTitle: ['¿Querés','Contratarnos?'],
+    contactBody: 'Para bookings, entrevistas y colaboraciones, escribinos. Tocamos en fiestas, festivales, bodas y cualquier lugar que tenga energía.',
+    formName: 'Nombre',
+    formEmail: 'Email',
+    formMsg: 'Tu mensaje...',
+    formBtn: 'Enviar Mensaje',
+    formSuccess: '¡Mensaje Enviado!',
+    formSuccessSub: 'Te respondemos en 24-48 horas. ¡Fuego!',
+    alsoOn: 'También en',
+    footerSub: 'Chicha Psicodélica · Hobart, Tasmania',
+  },
+  en: {
+    nav: ['About','Shows','Sound','Band','Contact'],
+    heroSub: 'Psychedelic Chicha',
+    heroLocation: 'Hobart, Tasmania · Lutruwita',
+    heroCta1: 'Upcoming Shows',
+    heroCta2: 'The Band',
+    aboutLabel: 'Who We Are',
+    aboutTitle: ['Fire from the South,', 'Rhythm of the World'],
+    aboutP1: '<strong>Los Candela</strong> are a force of nature — a psychedelic chicha band setting the far south of the world on fire. From the streets of <strong>Hobart, Tasmania</strong>, they invoke the spirits of Lima, Bogotá and beyond with a sound that asks no permission.',
+    aboutP2: 'Guitars that soar, bass lines that shake the floor, percussion that never lets up. Los Candela blend the hypnotic magic of <strong>psychedelic cumbia</strong> with the raw energy of a south that has a lot to say.',
+    aboutP3: 'If you feel it in your chest, you\'re hearing it right.',
+    stats: [['~','Shows per year'],['∞','Live energy'],['1','Hobart']],
+    showsLabel: 'Dates 2026',
+    showsTitle: ['Upcoming','Shows'],
+    tagSold: 'Sold Out',
+    tagTickets: 'Tickets',
+    soundLabel: 'The Sound',
+    soundTitle: ['Chicha from','the End of the World'],
+    soundCards: [
+      { icon:'🎸', title:'Wah Guitar', text:'Pedals that cry, riffs that chase you till dawn. The Los Candela guitar is a dialogue between the Andean desert and the Antarctic wind.' },
+      { icon:'🥁', title:'Relentless Rhythm', text:'Percussion is the heart of chicha — no pause, no apology. Congas, timbales and bass drums build a trance you never want to leave.' },
+      { icon:'🎹', title:'Space Keys', text:'Floating organs, synths vibrating at frequencies the ear can barely follow. Pure psychedelia at tropical temperature.' },
+    ],
+    playerTitle: 'Fire from the South — Demo 2025',
+    bandLabel: 'The Band',
+    bandTitle: ['Six Souls,','One Fire'],
+    contactLabel: 'Contact',
+    contactTitle: ['Want to','Book Us?'],
+    contactBody: 'For bookings, interviews and collaborations, get in touch. We play parties, festivals, weddings and anywhere with good energy.',
+    formName: 'Name',
+    formEmail: 'Email',
+    formMsg: 'Your message...',
+    formBtn: 'Send Message',
+    formSuccess: 'Message Sent!',
+    formSuccessSub: 'We\'ll get back to you within 24-48 hours. Fire!',
+    alsoOn: 'Also on',
+    footerSub: 'Psychedelic Chicha · Hobart, Tasmania',
+  },
+};
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "day",
+  "lang": "es"
+}/*EDITMODE-END*/;
+
+// ── Cursor ──────────────────────────────────────────────────
+function useCursor() {
+  useEffect(() => {
+    const dot = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    const colors = ['#D4A017','#E8601C','#2A9B7A','#8B3FA8','#C2321A'];
+    let colorIdx = 0;
+    const onMove = e => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.transform = `translate(${mx - 6}px, ${my - 6}px)`;
+    };
+    const onDown = () => {
+      colorIdx = (colorIdx + 1) % colors.length;
+      dot.style.background = colors[colorIdx];
+      ring.style.borderColor = colors[colorIdx];
+    };
+    let raf;
+    const loop = () => {
+      rx += (mx - rx - 18) * 0.12;
+      ry += (my - ry - 18) * 0.12;
+      ring.style.transform = `translate(${rx}px, ${ry}px)`;
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mousedown', onDown);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mousedown', onDown);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+}
+
+// ── Particles ────────────────────────────────────────────────────
+function Particles() {
+  const particles = Array.from({length: 28}, (_, i) => ({
+    id: i,
+    color: ['#D4A017','#E8601C','#2A9B7A','#8B3FA8','#C2321A'][i % 5],
+    size: 2 + Math.random() * 4,
+    left: Math.random() * 100,
+    delay: Math.random() * 10,
+    duration: 8 + Math.random() * 12,
+    dx: (Math.random() - 0.5) * 200 + 'px',
+  }));
+  return (
+    <div className="hero-particles">
+      {particles.map(p => (
+        <div key={p.id} className="particle" style={{
+          left: `${p.left}%`, bottom: '-10px',
+          width: p.size, height: p.size,
+          background: p.color,
+          animationDuration: `${p.duration}s`,
+          animationDelay: `${p.delay}s`,
+          '--dx': p.dx, opacity: 0.6,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ── Zigzag ────────────────────────────────────────────────────
+function ZigzagBand({ color = '#D4A017', flip = false }) {
+  const pts = Array.from({length: 60}, (_, i) => `${i * 34},${i % 2 === 0 ? 0 : 24}`).join(' ');
+  return (
+    <div className="zz-runner">
+      <div className="zz-runner-inner" style={{ transform: flip ? 'scaleX(-1)' : 'none' }}>
+        {[0,1].map(k => (
+          <svg key={k} width="2040" height="24" viewBox="0 0 2040 24" fill="none" style={{ display:'block', flexShrink:0 }}>
+            <polyline points={pts} stroke={color} strokeWidth="2.5" fill="none" />
+          </svg>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Sun Graphic ───────────────────────────────────────────────────
+function SunGraphic() {
+  const rays = Array.from({length: 16}, (_, i) => {
+    const angle = (i / 16) * 360, rad = angle * Math.PI / 180;
+    return { x1: 130 + 110 * Math.cos(rad), y1: 130 + 110 * Math.sin(rad), x2: 130 + 130 * Math.cos(rad), y2: 130 + 130 * Math.sin(rad) };
+  });
+  return (
+    <svg viewBox="0 0 260 260" style={{ width:'100%', height:'100%' }}>
+      <defs>
+        <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#F5D030" />
+          <stop offset="40%" stopColor="#E8601C" />
+          <stop offset="100%" stopColor="#C2321A" />
+        </radialGradient>
+        <radialGradient id="outerGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#D4A017" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#D4A017" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="130" cy="130" r="128" fill="url(#outerGrad)" />
+      {rays.map((r, i) => <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke="#D4A017" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />)}
+      <circle cx="130" cy="130" r="90" fill="url(#sunGrad)" />
+      <circle cx="130" cy="130" r="55" fill="#F5D030" opacity="0.9" />
+      <text x="130" y="148" textAnchor="middle" fontFamily="'Bebas Neue', sans-serif" fontSize="34" fill="#0D0904" letterSpacing="2">CANDELA</text>
+    </svg>
+  );
+}
+
+// ── Nav ───────────────────────────────────────────────────────────
+function Nav({ t }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+  const anchors = ['about','shows','sound','band','contact'];
+  return (
+    <nav className={scrolled ? 'scrolled' : ''}>
+      <a href="#top" className="nav-logo"><span>Los</span>CANDELA</a>
+      <ul className="nav-links">
+        {t.nav.map((l, i) => <li key={l}><a href={`#${anchors[i]}`}>{l}</a></li>)}
+      </ul>
+    </nav>
+  );
+}
+
+// ── Hero ──────────────────────────────────────────────────────────
+function Hero({ t }) {
+  return (
+    <section className="hero" id="top">
+      <Particles />
+      <div className="hero-content">
+        <span className="hero-los">Los</span>
+        <span className="hero-candela">CANDELA</span>
+        <div className="hero-sub">{t.heroSub}</div>
+        <div className="hero-location">{t.heroLocation}</div>
+        <div className="hero-cta-group">
+          <a href="#shows" className="btn btn-primary">{t.heroCta1}</a>
+          <a href="#about" className="btn btn-outline">{t.heroCta2}</a>
+        </div>
+      </div>
+      <div style={{ position:'absolute', bottom:0, width:'100%' }}>
+        <ZigzagBand color="#D4A017" />
+        <ZigzagBand color="#E8601C" />
+        <ZigzagBand color="#2A9B7A" flip />
+      </div>
+    </section>
+  );
+}
+
+// ── About ─────────────────────────────────────────────────────────
+function About({ t }) {
+  return (
+    <section id="about" style={{ background:'var(--bg)' }}>
+      <div className="max-w">
+        <div className="section-label">{t.aboutLabel}</div>
+        <h2 className="section-title reveal">{t.aboutTitle[0]}<br /><span>{t.aboutTitle[1]}</span></h2>
+        <div className="about-grid">
+          <div className="about-text reveal">
+            <p dangerouslySetInnerHTML={{ __html: t.aboutP1 }} />
+            <p dangerouslySetInnerHTML={{ __html: t.aboutP2 }} />
+            <p>{t.aboutP3}</p>
+            <div style={{ marginTop:'2rem', display:'flex', gap:'2rem' }}>
+              {t.stats.map(([n, l]) => (
+                <div key={l}>
+                  <div style={{ fontFamily:"'Bebas Neue', sans-serif", fontSize:'2.5rem', color:'var(--gold)', lineHeight:1 }}>{n}</div>
+                  <div style={{ fontSize:'0.7rem', letterSpacing:'0.15em', textTransform:'uppercase', color:'var(--muted)', marginTop:'0.2rem' }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="about-visual reveal">
+            <div style={{ width:'260px', height:'260px', animation:'spin-slow 25s linear infinite' }}><SunGraphic /></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Shows ─────────────────────────────────────────────────────────
+const SHOWS = [
+  { date:'17', month:'MAY', venue:'The Winston', location:'Hobart, TAS', desc:{ es:'Con: Grupo Celeste + DJs', en:'With: Grupo Celeste + DJs' }, tag:'tickets' },
+  { date:'31', month:'MAY', venue:'Brisbane Hotel', location:'Hobart, TAS', desc:{ es:'Noche de Chicha — puerta abierta', en:'Chicha Night — free entry' }, tag:'tickets' },
+  { date:'14', month:'JUN', venue:'Salamanca Arts Centre', location:'Hobart, TAS', desc:{ es:'Midwinter Fiesta', en:'Midwinter Fiesta' }, tag:'tickets' },
+  { date:'28', month:'JUN', venue:'The Homestead', location:'Longley, TAS', desc:{ es:'Festival de Invierno — outdoor', en:'Winter Festival — outdoor' }, tag:'sold' },
+  { date:'19', month:'JUL', venue:'Republic Bar', location:'Hobart, TAS', desc:{ es:'Late night session', en:'Late night session' }, tag:'tickets' },
+  { date:'02', month:'AGO', venue:'MONA FOMA Stage', location:'Hobart, TAS', desc:{ es:'Festival principal', en:'Main festival stage' }, tag:'tickets' },
+];
+
+function Shows({ t, lang }) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <section id="shows" className="shows-bg">
+      <div style={{ position:'absolute', top:0, width:'100%' }}>
+        <ZigzagBand color="#C2321A" />
+        <ZigzagBand color="#8B3FA8" flip />
+      </div>
+      <div className="max-w" style={{ paddingTop:'2rem' }}>
+        <div className="section-label">{t.showsLabel}</div>
+        <h2 className="section-title reveal">{t.showsTitle[0]}<br /><span>{t.showsTitle[1]}</span></h2>
+        <div className="shows-grid">
+          {SHOWS.map((s, i) => (
+            <div key={i} className="show-row reveal"
+              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+              style={{ borderBottomColor: hovered === i ? 'rgba(212,160,23,0.3)' : undefined }}>
+              <div className="show-date">{s.date}<span>{s.month} 2026</span></div>
+              <div className="show-info">
+                <h3>{s.venue}</h3>
+                <p>{s.location} · {s.desc[lang]}</p>
+              </div>
+              <div className={`show-tag ${s.tag === 'sold' ? 'tag-sold' : 'tag-tickets'}`}>
+                {s.tag === 'sold' ? t.tagSold : t.tagTickets}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ position:'absolute', bottom:0, width:'100%' }}>
+        <ZigzagBand color="#2A9B7A" />
+        <ZigzagBand color="#D4A017" flip />
+      </div>
+    </section>
+  );
+}
+
+// ── Wave Player ────────────────────────────────────────────────────
+function WavePlayer({ t }) {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const rafRef = useRef(null);
+  const startRef = useRef(null);
+  useEffect(() => {
+    if (playing) {
+      const step = ts => {
+        if (!startRef.current) startRef.current = ts - progress * 180000;
+        setProgress(((ts - startRef.current) % 180000) / 180000);
+        rafRef.current = requestAnimationFrame(step);
+      };
+      rafRef.current = requestAnimationFrame(step);
+    } else {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      startRef.current = null;
+    }
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [playing]);
+  const bars = Array.from({length: 60}, (_, i) => 8 + Math.abs(Math.sin(i * 0.8)) * 40 + Math.abs(Math.sin(i * 1.3)) * 20);
+  return (
+    <div className="reveal" style={{ marginTop:'4rem', background:'var(--dark2)', padding:'2rem', display:'flex', flexDirection:'column', gap:'1.2rem' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+        <button onClick={() => setPlaying(p => !p)} style={{
+          width:52, height:52, borderRadius:'50%', border:'none', cursor:'none',
+          background: playing ? 'linear-gradient(135deg,var(--red),var(--orange))' : 'linear-gradient(135deg,var(--gold),var(--orange))',
+          color:'#0D0904', fontSize:'1.2rem', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+        }}>{playing ? '⏸' : '▶'}</button>
+        <div>
+          <div style={{ fontFamily:"'Bebas Neue', sans-serif", fontSize:'1.1rem', letterSpacing:'0.05em', color:'var(--cream)' }}>{t.playerTitle}</div>
+          <div style={{ fontSize:'0.72rem', color:'rgba(240,230,200,0.4)', letterSpacing:'0.1em' }}>
+            {Math.floor(progress * 3)}:{String(Math.floor((progress * 180) % 60)).padStart(2,'0')} / 3:00
+          </div>
+        </div>
+      </div>
+      <div style={{ display:'flex', alignItems:'center', gap:'2px', height:'60px' }}>
+        {bars.map((h, i) => (
+          <div key={i} style={{
+            flex:1, height:`${h}px`,
+            background: i / bars.length < progress ? 'linear-gradient(180deg,var(--gold),var(--orange))' : 'rgba(240,230,200,0.12)',
+            borderRadius:'2px', transition:'background 0.1s',
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Sound ─────────────────────────────────────────────────────────
+function Sound({ t }) {
+  return (
+    <section id="sound" className="sound-section">
+      <div className="sound-orbs">
+        <div className="orb" style={{ width:400, height:400, background:'var(--purple)', top:'10%', left:'-10%', animationDuration:'9s' }} />
+        <div className="orb" style={{ width:300, height:300, background:'var(--teal)', bottom:'5%', right:'-5%', animationDuration:'11s', animationDelay:'2s' }} />
+        <div className="orb" style={{ width:250, height:250, background:'var(--orange)', top:'40%', left:'40%', animationDuration:'7s', animationDelay:'1s' }} />
+      </div>
+      <div className="max-w sound-content">
+        <div className="section-label">{t.soundLabel}</div>
+        <h2 className="section-title reveal">{t.soundTitle[0]}<br /><span>{t.soundTitle[1]}</span></h2>
+        <div className="sound-grid" style={{ marginTop:'4rem' }}>
+          {t.soundCards.map((c, i) => (
+            <div key={i} className="sound-card reveal" style={{ animationDelay:`${i*0.1}s` }}>
+              <span className="sound-card-icon" style={{ animationDelay:`${i * 0.8}s` }}>{c.icon}</span>
+              <h3>{c.title}</h3>
+              <p>{c.text}</p>
+            </div>
+          ))}
+        </div>
+        <WavePlayer t={t} />
+      </div>
+    </section>
+  );
+}
+
+// ── Band ──────────────────────────────────────────────────────────
+const MEMBERS = [
+  { initial:'MV', name:'Marcos V.', role:{ es:'Guitarra', en:'Guitar' }, color:'#E8601C' },
+  { initial:'LR', name:'Lucía R.',  role:{ es:'Voz', en:'Vocals' }, color:'#D4A017' },
+  { initial:'JP', name:'Jorge P.',  role:{ es:'Bajo', en:'Bass' }, color:'#2A9B7A' },
+  { initial:'CB', name:'Carlos B.', role:{ es:'Percusión', en:'Percussion' }, color:'#8B3FA8' },
+  { initial:'AS', name:'Ana S.',    role:{ es:'Teclados', en:'Keys' }, color:'#C2321A' },
+  { initial:'FG', name:'Felipe G.', role:{ es:'Congas', en:'Congas' }, color:'#D4A017' },
+];
+
+function Band({ t, lang }) {
+  return (
+    <section id="band" className="members-section">
+      <div className="max-w">
+        <div className="section-label">{t.bandLabel}</div>
+        <h2 className="section-title reveal">{t.bandTitle[0]}<br /><span>{t.bandTitle[1]}</span></h2>
+        <div className="members-grid" style={{ marginTop:'3rem' }}>
+          {MEMBERS.map((m, i) => (
+            <div key={i} className="member-card reveal" style={{ animationDelay:`${i * 0.08}s` }}>
+              <div className="member-avatar" style={{ background:`${m.color}22`, border:`2px solid ${m.color}44`, color:m.color }}>
+                {m.initial}
+              </div>
+              <div className="member-name">{m.name}</div>
+              <div className="member-role">{m.role[lang]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Contact ───────────────────────────────────────────────────────
+function Contact({ t }) {
+  const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({ name:'', email:'', msg:'' });
+  const inputStyle = {
+    width:'100%', background:'rgba(240,230,200,0.05)',
+    border:'1px solid rgba(240,230,200,0.12)', borderBottom:'2px solid var(--gold)',
+    color:'var(--cream)', padding:'0.9rem 1rem',
+    fontFamily:"'DM Sans', sans-serif", fontSize:'0.95rem', outline:'none', marginBottom:'1rem',
+  };
+  return (
+    <section id="contact" className="contact-section">
+      <div className="max-w contact-inner" style={{ maxWidth:600 }}>
+        <div className="section-label">{t.contactLabel}</div>
+        <h2 className="section-title reveal">{t.contactTitle[0]}<br /><span>{t.contactTitle[1]}</span></h2>
+        <p className="reveal" style={{ color:'rgba(240,230,200,0.55)', marginTop:'1rem', fontSize:'0.95rem', lineHeight:1.7 }}>{t.contactBody}</p>
+        {sent ? (
+          <div className="reveal" style={{ marginTop:'3rem', padding:'2.5rem', background:'rgba(42,155,122,0.1)', border:'1px solid var(--teal)', textAlign:'center' }}>
+            <div style={{ fontFamily:"'Bebas Neue', sans-serif", fontSize:'2rem', color:'var(--teal)', letterSpacing:'0.05em' }}>{t.formSuccess}</div>
+            <p style={{ color:'rgba(240,230,200,0.6)', marginTop:'0.5rem' }}>{t.formSuccessSub}</p>
+          </div>
+        ) : (
+          <form className="reveal" style={{ marginTop:'3rem', textAlign:'left' }} onSubmit={e => { e.preventDefault(); setSent(true); }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
+              <input style={inputStyle} placeholder={t.formName} value={form.name} onChange={e => setForm(f => ({...f, name:e.target.value}))} required />
+              <input style={inputStyle} type="email" placeholder={t.formEmail} value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} required />
+            </div>
+            <textarea style={{ ...inputStyle, height:'140px', resize:'vertical' }} placeholder={t.formMsg} value={form.msg} onChange={e => setForm(f => ({...f, msg:e.target.value}))} required />
+            <button type="submit" className="btn btn-primary" style={{ fontSize:'1rem', width:'100%', textAlign:'center', fontFamily:"'Bebas Neue', sans-serif" }}>{t.formBtn}</button>
+          </form>
+        )}
+        <div style={{ marginTop:'3rem', textAlign:'center' }}>
+          <div style={{ fontSize:'0.7rem', letterSpacing:'0.2em', color:'rgba(240,230,200,0.3)', textTransform:'uppercase', marginBottom:'1rem' }}>{t.alsoOn}</div>
+          <div style={{ display:'flex', gap:'1.5rem', justifyContent:'center' }}>
+            {['Instagram','Facebook','Spotify','Bandcamp'].map(s => (
+              <span key={s} style={{ fontSize:'0.75rem', letterSpacing:'0.12em', textTransform:'uppercase', color:'rgba(240,230,200,0.4)', cursor:'none', transition:'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color = 'var(--gold)'}
+                onMouseLeave={e => e.target.style.color = 'rgba(240,230,200,0.4)'}>{s}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Footer ────────────────────────────────────────────────────────
+function Footer({ t }) {
+  return (
+    <>
+      <div style={{ background:'var(--bg)' }}>
+        <ZigzagBand color="#D4A017" />
+        <ZigzagBand color="#C2321A" flip />
+        <ZigzagBand color="#2A9B7A" />
+      </div>
+      <footer>
+        <div className="footer-logo"><span>Los</span>CANDELA</div>
+        <p>{t.footerSub} · {new Date().getFullYear()}</p>
+      </footer>
+    </>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────────────
+function App() {
+  useCursor();
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const theme = tweaks.theme;
+  const lang = tweaks.lang;
+  const t = COPY[lang];
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [lang]);
+
+  return (
+    <>
+      <Nav t={t} />
+      <Hero t={t} />
+      <About t={t} />
+      <Shows t={t} lang={lang} />
+      <Sound t={t} />
+      <Band t={t} lang={lang} />
+      <Contact t={t} />
+      <Footer t={t} />
+
+      <TweaksPanel>
+        <TweakSection label="Tema / Theme">
+          <TweakRadio label="Modo" value={theme} options={['night','day']} onChange={v => setTweak('theme', v)} />
+        </TweakSection>
+        <TweakSection label="Idioma / Language">
+          <TweakRadio label="Idioma" value={lang} options={['es','en']} onChange={v => setTweak('lang', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
